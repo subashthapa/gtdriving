@@ -65,6 +65,17 @@ return [
             'transport' => 'resend',
         ],
 
+        'resend_smtp' => [
+            'transport' => 'smtp',
+            'host' => env('RESEND_SMTP_HOST', 'smtp.resend.com'),
+            'port' => env('RESEND_SMTP_PORT', 587),
+            'encryption' => env('RESEND_SMTP_ENCRYPTION', 'tls'),
+            'username' => 'resend',
+            'password' => env('RESEND_API_KEY'),
+            'timeout' => 15,
+            'local_domain' => parse_url(env('APP_URL', 'https://gtdriving.com.au'), PHP_URL_HOST),
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),

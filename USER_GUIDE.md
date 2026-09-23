@@ -143,6 +143,7 @@ Use a unique password and enable two-factor authentication for every administrat
 - **A booking cannot be cancelled:** past bookings cannot be cancelled, and paid bookings must be refunded first.
 - **Changes do not appear:** refresh the page and sign in again if the session has expired.
 - **Password reset email does not arrive:** contact the site operator; production email delivery may require server mail configuration.
+- **Verification email does not arrive:** check spam, confirm the address is correct, then select **Resend Verification Email**. Contact the site operator if it still does not arrive.
 
 ## Safe administration checklist
 
