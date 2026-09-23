@@ -1,6 +1,7 @@
 /.phpunit.cache
+.DS_Store
+**/.DS_Store
 /node_modules
-/public/img
 /public/build
 /public/hot
 /public/storage
@@ -10,6 +11,7 @@
 .env
 .env.backup
 .env.production
+/deploy/.env
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

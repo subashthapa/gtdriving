@@ -1,0 +1,55 @@
+name: gtdriving-production
+
+services:
+  gtdriving:
+    build:
+      context: .
+      target: production
+    image: gtdriving:production
+    env_file:
+      - ${ENV_FILE:-deploy/.env}
+    environment:
+      RUN_MIGRATIONS: "true"
+    restart: unless-stopped
+    volumes:
+      - gtdriving_database:/var/www/html/database
+      - gtdriving_storage:/var/www/html/storage
+    networks:
+      - coolify
+      - private
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.middlewares.gtdriving-gzip.compress=true
+      - traefik.http.middlewares.gtdriving-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.gtdriving-http.entrypoints=http
+      - traefik.http.routers.gtdriving-http.middlewares=gtdriving-redirect
+      - traefik.http.routers.gtdriving-http.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.gtdriving-http.service=gtdriving
+      - traefik.http.routers.gtdriving-www-http.entrypoints=http
+      - traefik.http.routers.gtdriving-www-http.middlewares=gtdriving-redirect
+      - traefik.http.routers.gtdriving-www-http.rule=Host(`${APP_WWW_DOMAIN}`)
+      - traefik.http.routers.gtdriving-www-http.service=gtdriving
+      - traefik.http.routers.gtdriving-https.entrypoints=https
+      - traefik.http.routers.gtdriving-https.middlewares=gtdriving-gzip
+      - traefik.http.routers.gtdriving-https.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.gtdriving-https.service=gtdriving
+      - traefik.http.routers.gtdriving-https.tls=true
+      - traefik.http.routers.gtdriving-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.gtdriving-www-https.entrypoints=https
+      - traefik.http.routers.gtdriving-www-https.middlewares=gtdriving-gzip
+      - traefik.http.routers.gtdriving-www-https.rule=Host(`${APP_WWW_DOMAIN}`)
+      - traefik.http.routers.gtdriving-www-https.service=gtdriving
+      - traefik.http.routers.gtdriving-www-https.tls=true
+      - traefik.http.routers.gtdriving-www-https.tls.certresolver=letsencrypt
+      - traefik.http.services.gtdriving.loadbalancer.server.port=80
+
+networks:
+  coolify:
+    external: true
+    name: coolify
+  private:
+
+volumes:
+  gtdriving_database:
+  gtdriving_storage:

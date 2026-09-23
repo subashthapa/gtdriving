@@ -14,8 +14,8 @@
 
 <script setup>
 import { useForm } from '@inertiajs/vue3'
-import Input from '@/Components/Form/Input.vue'
-import Textarea from '@/Components/Form/Textarea.vue'
+import Input from '@/components/Form/Input.vue'
+import Textarea from '@/components/Form/Textarea.vue'
 
 const form = useForm({
   name: '',

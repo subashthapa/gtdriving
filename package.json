@@ -30,7 +30,6 @@
         "@fullcalendar/resource-timeline": "^6.1.15",
         "@fullcalendar/timegrid": "^6.1.15",
         "@fullcalendar/vue3": "^6.1.15",
-        "@rollup/rollup-darwin-arm64": "^4.27.4",
         "@vitejs/plugin-vue": "^5.2.0",
         "vue-cal": "^4.10.0",
         "vue-router": "^4.4.5"
