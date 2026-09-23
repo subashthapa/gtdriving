@@ -29,7 +29,7 @@ Route::middleware([
     Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
 });
 
-Route::middleware(['auth', 'role:Admin|SuperAdmin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'role:Admin|SuperAdmin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
     Route::get('bookings/{booking}/edit', [AdminBookingController::class, 'edit'])->name('bookings.edit');
     Route::put('bookings/{booking}', [AdminBookingController::class, 'update'])->name('bookings.update');
@@ -39,7 +39,7 @@ Route::middleware(['auth', 'role:Admin|SuperAdmin'])->prefix('admin')->name('adm
 });
 
 
-Route::middleware(['auth', 'role:Admin|SuperAdmin'])->prefix('dashboard/admin')->as('admin.')->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'role:Admin|SuperAdmin'])->prefix('dashboard/admin')->as('admin.')->group(function () {
     Route::get('instructors', [UserController::class, 'instructors'])->name('instructors.index');
     Route::get('learners', [UserController::class, 'learners'])->name('learners.index');
     Route::resource('users', UserController::class)->names('users');

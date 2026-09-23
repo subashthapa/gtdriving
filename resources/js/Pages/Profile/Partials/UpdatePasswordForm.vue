@@ -71,6 +71,9 @@ const updatePassword = () => {
                     class="mt-1 block w-full"
                     autocomplete="new-password"
                 />
+                <p class="mt-1 text-xs text-gray-500">
+                    At least 12 characters with upper and lower case letters, a number, and a symbol.
+                </p>
                 <InputError :message="form.errors.password" class="mt-2" />
             </div>
 

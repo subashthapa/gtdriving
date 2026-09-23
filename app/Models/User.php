@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +11,7 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasRoles, HasApiTokens;
 
@@ -53,6 +53,8 @@ class User extends Authenticatable
      */
     protected $appends = [
         'profile_photo_url',
+        'is_admin',
+        'is_super_admin',
     ];
 
     /**
@@ -77,5 +79,15 @@ class User extends Authenticatable
     public function instructorBookings()
     {
         return $this->hasMany(Booking::class, 'instructor');
+    }
+
+    public function getIsAdminAttribute(): bool
+    {
+        return $this->hasAnyRole(['Admin', 'SuperAdmin']);
+    }
+
+    public function getIsSuperAdminAttribute(): bool
+    {
+        return $this->hasRole('SuperAdmin');
     }
 }

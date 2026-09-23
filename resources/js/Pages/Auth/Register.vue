@@ -69,6 +69,9 @@ const submit = () => {
                     required
                     autocomplete="new-password"
                 />
+                <p class="mt-1 text-xs text-gray-500">
+                    At least 12 characters with upper and lower case letters, a number, and a symbol.
+                </p>
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
 
@@ -107,6 +110,9 @@ const submit = () => {
                     Register
                 </PrimaryButton>
             </div>
+            <p class="mt-4 text-center text-xs text-gray-500">
+                We will email you a verification link before you can access your dashboard.
+            </p>
         </form>
     </AuthenticationCard>
 </template>

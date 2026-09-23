@@ -22,6 +22,6 @@ Route::get('available-slots', [BookingController::class, 'getAvailableSlots']);
 Route::get('booked-dates', [BookingController::class, 'getBookedDates'])->middleware('throttle:60,1');
 Route::get('get-time-slots', [TimeslotController::class, 'getTimeslots']);
 
-Route::middleware(['auth', 'role:SuperAdmin|Admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'verified', 'role:SuperAdmin|Admin'])->prefix('admin')->group(function () {
     Route::get('/stats', [DashboardController::class, 'stats']);
 });

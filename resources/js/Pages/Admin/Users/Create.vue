@@ -38,6 +38,7 @@ const submit = () => form.post(route('admin.users.store'))
         <div>
           <label class="mb-1 block text-sm font-medium">Temporary password</label>
           <input v-model="form.password" type="password" required class="w-full rounded border-gray-300" />
+          <p class="mt-1 text-xs text-gray-500">Use at least 12 characters with upper and lower case letters, a number, and a symbol.</p>
           <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
         </div>
         <div>

@@ -145,6 +145,13 @@ const formatCurrency = (amount) => {
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div v-if="isAdmin && !$page.props.auth.user?.two_factor_enabled" class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          <div>
+            <strong>Protect your administrator account.</strong>
+            Enable two-factor authentication and save your recovery codes.
+          </div>
+          <Link :href="route('profile.show')" class="rounded bg-amber-900 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800">Enable 2FA</Link>
+        </div>
         <div class="bg-white shadow-xl sm:rounded-lg p-6">
           <div v-if="isStudent">
             <h3 class="text-lg font-bold mb-4">Upcoming Bookings</h3>

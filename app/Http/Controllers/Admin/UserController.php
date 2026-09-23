@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -37,7 +39,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => ['required', 'string', Password::min(12)->mixedCase()->numbers()->symbols()],
             'phone' => 'nullable|string|max:20',
             'role' => ['nullable', Rule::in($this->assignableRoles())],
         ]);
@@ -50,6 +52,8 @@ class UserController extends Controller
         if ($role) {
             $user->syncRoles([$role]);
         }
+
+        event(new Registered($user));
 
         return redirect()->route('admin.users.index')->with('success', 'User created');
     }
@@ -72,11 +76,21 @@ class UserController extends Controller
         ]);
 
         $role = $validated['role'] ?? null;
+        $emailChanged = $validated['email'] !== $user->email;
         unset($validated['role']);
+
         $user->update($validated);
+
+        if ($emailChanged) {
+            $user->forceFill(['email_verified_at' => null])->save();
+        }
 
         if ($role) {
             $user->syncRoles([$role]);
+        }
+
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
         }
 
         return redirect()->route('admin.users.index')->with('success', 'User updated');

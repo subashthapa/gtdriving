@@ -129,7 +129,11 @@ Open the account menu and select **Profile**. From there:
 - Enable two-factor authentication and save the recovery codes securely.
 - Review and log out other browser sessions.
 
-Use a unique password and enable two-factor authentication for every administrator account. Do not share administrator credentials.
+New accounts must verify their email address before opening the dashboard or any administration screen. If the message does not arrive, use **Resend Verification Email** on the verification screen.
+
+Passwords must contain at least 12 characters with upper and lower case letters, a number, and a symbol.
+
+Use a unique password and enable two-factor authentication for every administrator account. Scan the QR code with an authenticator app, confirm the one-time code, and store the recovery codes in a password manager. Do not share administrator credentials.
 
 ## Troubleshooting
 

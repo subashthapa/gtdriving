@@ -52,7 +52,7 @@ const logout = () => {
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
-                                <template v-if="$page.props.auth.isAdmin">
+                                <template v-if="$page.props.auth.user?.is_admin">
                                     <NavLink :href="route('admin.bookings.index')" :active="route().current('admin.bookings.*')">
                                         Sessions
                                     </NavLink>
@@ -209,7 +209,7 @@ const logout = () => {
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
-                        <template v-if="$page.props.auth.isAdmin">
+                        <template v-if="$page.props.auth.user?.is_admin">
                             <ResponsiveNavLink :href="route('admin.bookings.index')" :active="route().current('admin.bookings.*')">Booked Sessions</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.instructors.index')" :active="route().current('admin.instructors.*')">Instructors</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.learners.index')" :active="route().current('admin.learners.*')">Learners</ResponsiveNavLink>
