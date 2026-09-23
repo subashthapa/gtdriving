@@ -85,6 +85,7 @@ Some admin tools are available by direct URL in the current version of the websi
 | Tool | Address | What it does |
 | --- | --- | --- |
 | Users | [dashboard/admin/users](https://gtdriving.com.au/dashboard/admin/users) | List, create, edit, or delete user accounts. |
+| Instructor invitations | [admin/instructor-invitations](https://gtdriving.com.au/admin/instructor-invitations) | Invite instructors and review, resend, or revoke invitation links. |
 | Packages | [admin/packages](https://gtdriving.com.au/admin/packages) | Create, edit, show/hide, or delete lesson packages. |
 | Pages | [admin/pages](https://gtdriving.com.au/admin/pages) | Create, edit, or delete website page records. |
 | Messages | [admin/messages](https://gtdriving.com.au/admin/messages) | View, create, edit, or delete customer enquiries. |
@@ -96,7 +97,20 @@ Some admin tools are available by direct URL in the current version of the websi
 - Select **Edit** to change a user's name or email address.
 - Select **Delete** only when the account and its associated access are no longer required.
 
-The current user screen does not assign roles. Role changes must be performed through an approved server administration process.
+Use invitation-based onboarding for instructors instead of creating an instructor through the general user screen.
+
+### Invite an instructor
+
+Only a `SuperAdmin` can manage instructor invitations.
+
+1. Open **Instructors** from the admin navigation and select **Invite Instructor**, or open the [Instructor invitations](https://gtdriving.com.au/admin/instructor-invitations) page directly.
+2. Enter the instructor's email address and select **Send invitation**.
+3. The instructor receives a single-use link that expires after 72 hours.
+4. A new user enters their name, phone number, and a strong password. Their email is verified by accepting the link and their account receives only the `Instructor` role.
+5. A learner who already has an account must sign in with the invited email address before accepting. Their account is then changed to the `Instructor` role.
+6. Ask the instructor to open **Profile** and enable two-factor authentication immediately.
+
+Use **Resend** to invalidate the previous link and issue a fresh 72-hour link. Use **Revoke** when the invitation should no longer be accepted. Never forward an invitation email or share its link with another person.
 
 ### Manage packages
 

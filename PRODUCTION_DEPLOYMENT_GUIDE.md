@@ -100,7 +100,7 @@ CACHE_STORE=database
 QUEUE_CONNECTION=sync
 ```
 
-GT Driving currently uses `MAIL_MAILER=log`; password reset and notification emails are logged, not delivered. Configure SMTP or a transactional mail provider before depending on email.
+GT Driving is configured to use Resend SMTP for password resets, email verification, and instructor invitations. Set `MAIL_MAILER=resend_smtp`, a valid `RESEND_API_KEY`, and a sender address on a verified Resend domain before deploying. Test delivery after every mail configuration change.
 
 ## First Deployment
 

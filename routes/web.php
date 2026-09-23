@@ -11,10 +11,19 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\UserController;
 use \App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Admin\InstructorInvitationController;
+use App\Http\Controllers\Auth\AcceptInstructorInvitationController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/messages', [MessageController::class, 'store'])->middleware('throttle:5,1')->name('messages.store');
 Route::post('book',[BookingController::class,'store'])->middleware('throttle:10,1')->name('saveBooking');
+
+Route::get('/instructor-invitations/{token}', [AcceptInstructorInvitationController::class, 'show'])
+    ->middleware('throttle:20,1')
+    ->name('instructor-invitations.show');
+Route::post('/instructor-invitations/{token}', [AcceptInstructorInvitationController::class, 'accept'])
+    ->middleware('throttle:5,1')
+    ->name('instructor-invitations.accept');
 
 Route::middleware([
     'auth:sanctum',
@@ -37,6 +46,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::resource('pages', PageController::class);
     Route::resource('messages', MessageController::class);
 });
+
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'role:SuperAdmin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('instructor-invitations', [InstructorInvitationController::class, 'index'])->name('instructor-invitations.index');
+        Route::post('instructor-invitations', [InstructorInvitationController::class, 'store'])->name('instructor-invitations.store');
+        Route::post('instructor-invitations/{invitation}/resend', [InstructorInvitationController::class, 'resend'])->name('instructor-invitations.resend');
+        Route::delete('instructor-invitations/{invitation}', [InstructorInvitationController::class, 'revoke'])->name('instructor-invitations.revoke');
+    });
 
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'role:Admin|SuperAdmin'])->prefix('dashboard/admin')->as('admin.')->group(function () {

@@ -29,7 +29,10 @@ const destroy = (id) => {
             <Link :href="route('admin.instructors.index')" class="rounded border bg-white px-3 py-2 text-sm">Instructors</Link>
             <Link :href="route('admin.learners.index')" class="rounded border bg-white px-3 py-2 text-sm">Learners</Link>
           </div>
-          <Link :href="route('admin.users.create')" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ Create User</Link>
+          <div class="flex flex-wrap gap-2">
+            <Link v-if="role === 'Instructor' && $page.props.auth.user?.is_super_admin" :href="route('admin.instructor-invitations.index')" class="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Invite Instructor</Link>
+            <Link :href="route('admin.users.create')" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">+ Create User</Link>
+          </div>
         </div>
 
         <div class="overflow-hidden rounded-lg bg-white shadow">
