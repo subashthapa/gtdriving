@@ -26,10 +26,16 @@ class CreateNewUser implements CreatesNewUsers
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ])->validate();
 
-        return User::create([
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
         ]);
+
+        if (\Spatie\Permission\Models\Role::where('name', 'Learner')->exists()) {
+            $user->assignRole('Learner');
+        }
+
+        return $user;
     }
 }

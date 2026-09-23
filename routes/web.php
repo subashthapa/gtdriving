@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\UserController;
 use \App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/messages', [MessageController::class, 'store'])->middleware('throttle:5,1')->name('messages.store');
@@ -29,6 +30,9 @@ Route::middleware([
 });
 
 Route::middleware(['auth', 'role:Admin|SuperAdmin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+    Route::get('bookings/{booking}/edit', [AdminBookingController::class, 'edit'])->name('bookings.edit');
+    Route::put('bookings/{booking}', [AdminBookingController::class, 'update'])->name('bookings.update');
     Route::resource('packages', PackageController::class);
     Route::resource('pages', PageController::class);
     Route::resource('messages', MessageController::class);
@@ -36,5 +40,7 @@ Route::middleware(['auth', 'role:Admin|SuperAdmin'])->prefix('admin')->name('adm
 
 
 Route::middleware(['auth', 'role:Admin|SuperAdmin'])->prefix('dashboard/admin')->as('admin.')->group(function () {
+    Route::get('instructors', [UserController::class, 'instructors'])->name('instructors.index');
+    Route::get('learners', [UserController::class, 'learners'])->name('learners.index');
     Route::resource('users', UserController::class)->names('users');
 });

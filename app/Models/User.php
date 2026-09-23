@@ -68,4 +68,14 @@ class User extends Authenticatable
             'income' => 'decimal:2',
         ];
     }
+
+    public function learnerBookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function instructorBookings()
+    {
+        return $this->hasMany(Booking::class, 'instructor');
+    }
 }

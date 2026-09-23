@@ -622,6 +622,90 @@ class AppRoutesAndFeaturesTest extends TestCase
         );
     }
 
+    public function test_admin_has_separate_instructor_and_learner_sections(): void
+    {
+        Role::findOrCreate('Instructor', 'web');
+        Role::findOrCreate('Learner', 'web');
+
+        $instructor = User::factory()->create();
+        $instructor->assignRole('Instructor');
+        $learner = User::factory()->create();
+        $learner->assignRole('Learner');
+        $admin = $this->createAdminUser();
+
+        $this->actingAs($admin)
+            ->get(route('admin.instructors.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/Index')
+                ->where('title', 'Instructors')
+                ->where('role', 'Instructor')
+                ->has('users', 1)
+                ->where('users.0.id', $instructor->id)
+            );
+
+        $this->actingAs($admin)
+            ->get(route('admin.learners.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/Index')
+                ->where('title', 'Learners')
+                ->where('role', 'Learner')
+                ->has('users', 1)
+                ->where('users.0.id', $learner->id)
+            );
+    }
+
+    public function test_admin_can_update_a_booked_session(): void
+    {
+        Role::findOrCreate('Instructor', 'web');
+        Role::findOrCreate('Learner', 'web');
+
+        $admin = $this->createAdminUser();
+        $learner = User::factory()->create();
+        $learner->assignRole('Learner');
+        $instructor = User::factory()->create();
+        $instructor->assignRole('Instructor');
+        $newDate = now()->addDays(5)->toDateString();
+
+        $booking = Booking::create([
+            'user_id' => $learner->id,
+            'instructor' => $instructor->id,
+            'start_date' => now()->addDays(2)->toDateString(),
+            'end_date' => now()->addDays(2)->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'amount' => 60,
+            'payment_status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.bookings.update', $booking), [
+                'user_id' => $learner->id,
+                'instructor' => $instructor->id,
+                'start_date' => $newDate,
+                'end_date' => $newDate,
+                'start_time' => '10:00',
+                'end_time' => '11:30',
+                'instructions' => 'Updated by admin',
+                'payment_status' => 'paid',
+                'payment_reference' => 'CASH-001',
+            ])
+            ->assertRedirect(route('admin.bookings.index'));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'start_date' => $newDate,
+            'start_time' => '10:00',
+            'end_time' => '11:30',
+            'instructions' => 'Updated by admin',
+            'amount' => 90,
+            'payment_status' => 'paid',
+            'payment_reference' => 'CASH-001',
+        ]);
+        $this->assertEquals('90.00', $instructor->fresh()->income);
+    }
+
     private function createAdminUser(): User
     {
         Role::findOrCreate('Admin', 'web');

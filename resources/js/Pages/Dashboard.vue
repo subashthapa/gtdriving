@@ -134,13 +134,12 @@ const formatCurrency = (amount) => {
     <template #header>
       <div class="flex justify-between items-center">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
-        <Link
-          v-if="isAdmin"
-          :href="route('admin.packages.index')"
-          class="bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Manage Packages
-        </Link>
+        <div v-if="isAdmin" class="flex flex-wrap justify-end gap-2">
+          <Link :href="route('admin.bookings.index')" class="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700">Booked Sessions</Link>
+          <Link :href="route('admin.instructors.index')" class="rounded bg-white px-3 py-2 text-sm text-blue-700 ring-1 ring-blue-200">Instructors</Link>
+          <Link :href="route('admin.learners.index')" class="rounded bg-white px-3 py-2 text-sm text-blue-700 ring-1 ring-blue-200">Learners</Link>
+          <Link :href="route('admin.packages.index')" class="rounded bg-white px-3 py-2 text-sm text-blue-700 ring-1 ring-blue-200">Packages</Link>
+        </div>
       </div>
     </template>
 

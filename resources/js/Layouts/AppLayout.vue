@@ -48,10 +48,24 @@ const logout = () => {
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-3 sm:-my-px sm:ms-6 sm:flex">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                <template v-if="$page.props.auth.isAdmin">
+                                    <NavLink :href="route('admin.bookings.index')" :active="route().current('admin.bookings.*')">
+                                        Sessions
+                                    </NavLink>
+                                    <NavLink :href="route('admin.instructors.index')" :active="route().current('admin.instructors.*')">
+                                        Instructors
+                                    </NavLink>
+                                    <NavLink :href="route('admin.learners.index')" :active="route().current('admin.learners.*')">
+                                        Learners
+                                    </NavLink>
+                                    <NavLink :href="route('admin.packages.index')" :active="route().current('admin.packages.*')">
+                                        Packages
+                                    </NavLink>
+                                </template>
                             </div>
                         </div>
 
@@ -195,6 +209,14 @@ const logout = () => {
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
+                        <template v-if="$page.props.auth.isAdmin">
+                            <ResponsiveNavLink :href="route('admin.bookings.index')" :active="route().current('admin.bookings.*')">Booked Sessions</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('admin.instructors.index')" :active="route().current('admin.instructors.*')">Instructors</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('admin.learners.index')" :active="route().current('admin.learners.*')">Learners</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('admin.packages.index')" :active="route().current('admin.packages.*')">Packages</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('admin.pages.index')" :active="route().current('admin.pages.*')">Pages</ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('admin.messages.index')" :active="route().current('admin.messages.*')">Messages</ResponsiveNavLink>
+                        </template>
                     </div>
 
                     <!-- Responsive Settings Options -->

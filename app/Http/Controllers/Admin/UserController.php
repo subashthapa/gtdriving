@@ -5,32 +5,51 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class UserController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Admin/Users/Index', [
-            'users' => User::all()
-        ]);
+        return $this->renderUsers('All Users');
+    }
+
+    public function instructors()
+    {
+        return $this->renderUsers('Instructors', 'Instructor');
+    }
+
+    public function learners()
+    {
+        return $this->renderUsers('Learners', 'Learner');
     }
 
     public function create()
     {
-        return Inertia::render('Admin/Users/Create');
+        return Inertia::render('Admin/Users/Create', [
+            'roles' => $this->assignableRoles(),
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
+            'phone' => 'nullable|string|max:20',
+            'role' => ['nullable', Rule::in($this->assignableRoles())],
         ]);
 
+        $role = $validated['role'] ?? null;
+        unset($validated['role']);
         $validated['password'] = bcrypt($validated['password']);
-        User::create($validated);
+        $user = User::create($validated);
+
+        if ($role) {
+            $user->syncRoles([$role]);
+        }
 
         return redirect()->route('admin.users.index')->with('success', 'User created');
     }
@@ -38,18 +57,27 @@ class UserController extends Controller
     public function edit(User $user)
     {
         return Inertia::render('Admin/Users/Edit', [
-            'user' => $user
+            'user' => $user->load('roles:id,name'),
+            'roles' => $this->assignableRoles(),
         ]);
     }
 
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            'name'  => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20',
+            'role' => ['nullable', Rule::in($this->assignableRoles())],
         ]);
 
+        $role = $validated['role'] ?? null;
+        unset($validated['role']);
         $user->update($validated);
+
+        if ($role) {
+            $user->syncRoles([$role]);
+        }
 
         return redirect()->route('admin.users.index')->with('success', 'User updated');
     }
@@ -57,6 +85,32 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
+
         return redirect()->route('admin.users.index')->with('success', 'User deleted');
+    }
+
+    private function renderUsers(string $title, ?string $role = null)
+    {
+        $query = User::query()
+            ->with('roles:id,name')
+            ->withCount(['learnerBookings', 'instructorBookings'])
+            ->orderBy('name');
+
+        if ($role) {
+            $query->role($role);
+        }
+
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $query->get(),
+            'title' => $title,
+            'role' => $role,
+        ]);
+    }
+
+    private function assignableRoles(): array
+    {
+        return auth()->user()->hasRole('SuperAdmin')
+            ? ['SuperAdmin', 'Admin', 'Instructor', 'Learner']
+            : ['Instructor', 'Learner'];
     }
 }
