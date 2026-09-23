@@ -12,8 +12,8 @@ use App\Http\Controllers\Admin\UserController;
 use \App\Http\Controllers\Admin\MessageController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
-Route::post('book',[BookingController::class,'store'])->name('saveBooking');
+Route::post('/messages', [MessageController::class, 'store'])->middleware('throttle:5,1')->name('messages.store');
+Route::post('book',[BookingController::class,'store'])->middleware('throttle:10,1')->name('saveBooking');
 
 Route::middleware([
     'auth:sanctum',

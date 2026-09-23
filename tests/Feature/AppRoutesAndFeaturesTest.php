@@ -257,21 +257,23 @@ class AppRoutesAndFeaturesTest extends TestCase
     public function test_booking_owner_can_update_booking(): void
     {
         $owner = User::factory()->create();
+        $originalDate = now()->addDays(2)->toDateString();
+        $rescheduledDate = now()->addDays(3)->toDateString();
 
         $booking = Booking::create([
             'user_id' => $owner->id,
             'start_time' => '09:00',
             'end_time' => '10:00',
-            'start_date' => '2026-02-21',
-            'end_date' => '2026-02-21',
+            'start_date' => $originalDate,
+            'end_date' => $originalDate,
             'instructor' => 3,
         ]);
 
         $this->actingAs($owner)
             ->from('/dashboard')
             ->put(route('bookings.update', $booking), [
-                'start_date' => '2026-02-23',
-                'end_date' => '2026-02-23',
+                'start_date' => $rescheduledDate,
+                'end_date' => $rescheduledDate,
                 'start_time' => '11:00',
                 'end_time' => '12:00',
                 'instructions' => 'Rescheduled',
@@ -280,7 +282,7 @@ class AppRoutesAndFeaturesTest extends TestCase
 
         $this->assertDatabaseHas('bookings', [
             'id' => $booking->id,
-            'start_date' => '2026-02-23',
+            'start_date' => $rescheduledDate,
             'start_time' => '11:00',
             'instructions' => 'Rescheduled',
         ]);
@@ -355,12 +357,13 @@ class AppRoutesAndFeaturesTest extends TestCase
 
         $instructor = User::factory()->create();
         $instructor->assignRole('Instructor');
+        $bookingDate = now()->addDay()->toDateString();
 
         $response = $this->postJson(route('saveBooking'), [
             'name' => 'Guest Learner',
             'email' => 'guest.learner@example.com',
             'phone' => '1234567890',
-            'date' => '2026-02-24',
+            'date' => $bookingDate,
             'start_time' => '09:00',
             'end_time' => '10:00',
             'instructor' => $instructor->id,
@@ -379,7 +382,7 @@ class AppRoutesAndFeaturesTest extends TestCase
         $this->assertDatabaseHas('bookings', [
             'user_id' => $learner->id,
             'instructor' => $instructor->id,
-            'start_date' => '2026-02-24',
+            'start_date' => $bookingDate,
         ]);
     }
 
@@ -397,12 +400,13 @@ class AppRoutesAndFeaturesTest extends TestCase
 
         $instructor = User::factory()->create();
         $instructor->assignRole('Instructor');
+        $bookingDate = now()->addDays(2)->toDateString();
 
         $response = $this->postJson(route('saveBooking'), [
             'name' => 'Existing Learner Updated',
             'email' => 'existing.learner@example.com',
             'phone' => '9998887777',
-            'date' => '2026-02-25',
+            'date' => $bookingDate,
             'start_time' => '11:00',
             'end_time' => '12:00',
             'instructor' => $instructor->id,
@@ -413,13 +417,13 @@ class AppRoutesAndFeaturesTest extends TestCase
         $this->assertDatabaseCount('users', 2);
         $this->assertDatabaseHas('users', [
             'id' => $learner->id,
-            'name' => 'Existing Learner Updated',
-            'phone' => '9998887777',
+            'name' => 'Existing Learner',
+            'phone' => '0001112222',
         ]);
         $this->assertDatabaseHas('bookings', [
             'user_id' => $learner->id,
             'instructor' => $instructor->id,
-            'start_date' => '2026-02-25',
+            'start_date' => $bookingDate,
         ]);
     }
 

@@ -15,11 +15,11 @@ Route::get('/user', function (Request $request) {
 
 // Route::get('/bookings', [BookingController::class, 'fetchBookings']);
 Route::get('/instructors', [BookingController::class, 'fetchInstructors']);
-Route::get('/instructors/{id}/bookings', [BookingController::class, 'getBookingsForInstructor']);
+Route::get('/instructors/{id}/bookings', [BookingController::class, 'getBookingsForInstructor'])->middleware('throttle:60,1');
 
 Route::get('available-slots', [BookingController::class, 'getAvailableSlots']);
 // Route::post('book', [BookingController::class, 'store'])->middleware('auth');
-Route::get('booked-dates', [BookingController::class, 'getBookedDates']);
+Route::get('booked-dates', [BookingController::class, 'getBookedDates'])->middleware('throttle:60,1');
 Route::get('get-time-slots', [TimeslotController::class, 'getTimeslots']);
 
 Route::middleware(['auth', 'role:SuperAdmin|Admin'])->prefix('admin')->group(function () {

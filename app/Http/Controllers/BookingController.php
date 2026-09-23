@@ -11,6 +11,7 @@ use App\Models\Timeslot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
@@ -86,7 +87,7 @@ class BookingController extends Controller
             'name' => 'required_without:user_id|string|max:255',
             'email' => 'required_without:user_id|email|max:255',
             'phone' => 'required_without:user_id|string|max:20',
-            'date' => 'required|date',
+            'date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'instructor' => [
@@ -125,11 +126,6 @@ class BookingController extends Controller
                 if (Role::where('name', 'Learner')->exists()) {
                     $user->assignRole('Learner');
                 }
-            } else {
-                $user->update([
-                    'name' => $validated['name'],
-                    'phone' => $validated['phone'],
-                ]);
             }
         }
 
@@ -144,34 +140,39 @@ class BookingController extends Controller
             ]);
         }
 
-        $existingBooking = Booking::whereDate('start_date', $validated['date'])
-            ->where('instructor', $instructorId)
-            ->whereTime('start_time', '<', $requestedEnd->format('H:i:s'))
-            ->whereTime('end_time', '>', $requestedStart->format('H:i:s'))
-            ->exists();
-
-        if ($existingBooking) {
-            throw ValidationException::withMessages([
-                'start_time' => 'This time slot is already booked. Please choose another time.'
-            ]);
-        }
-
         $durationMinutes = $requestedStart->diffInMinutes($requestedEnd);
         $amount = round(($durationMinutes / 60) * (float) config('services.instructor.hourly_rate', 60), 2);
 
-        Booking::create([
-            'user_id' => $user->id,
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'start_date' => $validated['date'],
-            'end_date' => $validated['date'],
-            'instructor' => $instructorId,
-            'approved_by' => $validated['approved_by'] ?? null,
-            'instructions' => $validated['instructions'] ?? null,
-            'amount' => $amount,
-            'payment_method' => $validated['payment_method'] ?? 'cash',
-            'payment_status' => 'pending',
-        ]);
+        DB::transaction(function () use ($validated, $user, $instructorId, $requestedStart, $requestedEnd, $amount) {
+            // Serialize booking creation per instructor to prevent concurrent double bookings.
+            User::whereKey($instructorId)->lockForUpdate()->firstOrFail();
+
+            $existingBooking = Booking::whereDate('start_date', $validated['date'])
+                ->where('instructor', $instructorId)
+                ->whereTime('start_time', '<', $requestedEnd->format('H:i:s'))
+                ->whereTime('end_time', '>', $requestedStart->format('H:i:s'))
+                ->exists();
+
+            if ($existingBooking) {
+                throw ValidationException::withMessages([
+                    'start_time' => 'This time slot is already booked. Please choose another time.',
+                ]);
+            }
+
+            Booking::create([
+                'user_id' => $user->id,
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'start_date' => $validated['date'],
+                'end_date' => $validated['date'],
+                'instructor' => $instructorId,
+                'approved_by' => $validated['approved_by'] ?? null,
+                'instructions' => $validated['instructions'] ?? null,
+                'amount' => $amount,
+                'payment_method' => $validated['payment_method'] ?? 'cash',
+                'payment_status' => 'pending',
+            ]);
+        });
 
         return response()->json([
             'message' => 'Booking created successfully!',
@@ -188,7 +189,7 @@ class BookingController extends Controller
      */
     public function getBookedDates()
     {
-        $bookings = Booking::select('start_date','instructions')->get();
+        $bookings = Booking::select('start_date')->distinct()->get();
         return response()->json($bookings);
     }
 
@@ -203,7 +204,7 @@ class BookingController extends Controller
         return response()->json($bookings->map(function ($booking) {
             return [
                 'id' => $booking->id,
-                'title' => $booking->instructions ?? 'Booked Slot',
+                'title' => 'Unavailable',
                 'start' => Carbon::parse($booking->start_date)->toDateString(). 'T' . $booking->start_time,
                 'end' => Carbon::parse($booking->end_date)->toDateString(). 'T' . $booking->end_time,
                 'instructor' => $booking->instructor
@@ -228,13 +229,34 @@ class BookingController extends Controller
         }
     
         $validated = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-            'start_time' => 'required',
-            'end_time' => 'required',
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|same:start_date',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
             'instructions' => 'nullable|string',
         ]);
-    
+
+        $hasConflict = Booking::query()
+            ->whereKeyNot($booking->id)
+            ->where('instructor', $booking->instructor)
+            ->whereDate('start_date', $validated['start_date'])
+            ->whereTime('start_time', '<', $validated['end_time'])
+            ->whereTime('end_time', '>', $validated['start_time'])
+            ->exists();
+
+        if ($hasConflict) {
+            throw ValidationException::withMessages([
+                'start_time' => 'This time overlaps another booking.',
+            ]);
+        }
+
+        $start = Carbon::parse($validated['start_date'].' '.$validated['start_time']);
+        $end = Carbon::parse($validated['end_date'].' '.$validated['end_time']);
+        $validated['amount'] = round(
+            ($start->diffInMinutes($end) / 60) * (float) config('services.instructor.hourly_rate', 60),
+            2
+        );
+
         $booking->update($validated);
     
         return back()->with('success', 'Booking updated.');
