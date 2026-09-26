@@ -92,7 +92,7 @@ APP_WWW_DOMAIN=www.example.com
 LOG_CHANNEL=stderr
 LOG_LEVEL=warning
 DB_CONNECTION=sqlite
-DB_DATABASE=/var/www/html/database/database.sqlite
+DB_DATABASE=/var/lib/gtdriving/database.sqlite
 SESSION_DRIVER=database
 SESSION_ENCRYPT=true
 SESSION_SECURE_COOKIE=true
@@ -248,7 +248,7 @@ Back up before risky changes or migrations:
 
 ```bash
 mkdir -p /opt/backups/PROJECT
-docker cp CONTAINER:/var/www/html/database/database.sqlite /opt/backups/PROJECT/database-$(date +%Y%m%d-%H%M%S).sqlite
+docker cp CONTAINER:/var/lib/gtdriving/database.sqlite /opt/backups/PROJECT/database-$(date +%Y%m%d-%H%M%S).sqlite
 docker cp CONTAINER:/var/www/html/storage/app/public /opt/backups/PROJECT/public-files-$(date +%Y%m%d-%H%M%S)
 ```
 
