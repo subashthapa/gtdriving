@@ -6,11 +6,18 @@ defineProps({
   users: { type: Array, default: () => [] },
   title: { type: String, default: 'All Users' },
   role: { type: String, default: null },
+  verification: { type: String, default: 'all' },
 })
 
 const destroy = (id) => {
   if (confirm('Are you sure you want to delete this user?')) {
     router.delete(route('admin.users.destroy', id))
+  }
+}
+
+const verify = (user) => {
+  if (confirm(`Verify the email address for ${user.name}?`)) {
+    router.patch(route('admin.users.verify', user.id), {}, { preserveScroll: true })
   }
 }
 </script>
@@ -28,6 +35,7 @@ const destroy = (id) => {
             <Link :href="route('admin.users.index')" class="rounded border bg-white px-3 py-2 text-sm">All Users</Link>
             <Link :href="route('admin.instructors.index')" class="rounded border bg-white px-3 py-2 text-sm">Instructors</Link>
             <Link :href="route('admin.learners.index')" class="rounded border bg-white px-3 py-2 text-sm">Learners</Link>
+            <Link :href="route('admin.users.unverified')" class="rounded border bg-white px-3 py-2 text-sm">Unverified</Link>
           </div>
           <div class="flex flex-wrap gap-2">
             <Link v-if="role === 'Instructor' && $page.props.auth.user?.is_super_admin" :href="route('admin.instructor-invitations.index')" class="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Invite Instructor</Link>
@@ -36,13 +44,14 @@ const destroy = (id) => {
         </div>
 
         <div class="overflow-hidden rounded-lg bg-white shadow">
-          <div v-if="!users.length" class="p-8 text-center text-gray-500">No {{ role ? role.toLowerCase() : 'user' }} accounts found.</div>
+          <div v-if="!users.length" class="p-8 text-center text-gray-500">No {{ verification === 'unverified' ? 'unverified user' : (role ? role.toLowerCase() : 'user') }} accounts found.</div>
           <div v-else class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
               <thead class="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
                   <th class="px-4 py-3">Name</th>
                   <th class="px-4 py-3">Contact</th>
+                  <th class="px-4 py-3">Verification</th>
                   <th class="px-4 py-3">Role</th>
                   <th class="px-4 py-3">Sessions</th>
                   <th class="px-4 py-3 text-right">Actions</th>
@@ -56,6 +65,10 @@ const destroy = (id) => {
                     <div>{{ user.phone || 'No phone' }}</div>
                   </td>
                   <td class="px-4 py-3">
+                    <span v-if="user.email_verified_at" class="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800">Verified</span>
+                    <span v-else class="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">Unverified</span>
+                  </td>
+                  <td class="px-4 py-3">
                     <span v-for="item in user.roles" :key="item.id" class="mr-1 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800">{{ item.name }}</span>
                     <span v-if="!user.roles.length" class="text-gray-400">No role</span>
                   </td>
@@ -63,6 +76,7 @@ const destroy = (id) => {
                     {{ user.roles.some((item) => item.name === 'Instructor') ? user.instructor_bookings_count : user.learner_bookings_count }}
                   </td>
                   <td class="space-x-3 px-4 py-3 text-right">
+                    <button v-if="!user.email_verified_at" @click="verify(user)" class="text-emerald-700 hover:underline">Verify</button>
                     <Link :href="route('admin.users.edit', user.id)" class="text-blue-600 hover:underline">Edit</Link>
                     <button @click="destroy(user.id)" class="text-red-600 hover:underline">Delete</button>
                   </td>

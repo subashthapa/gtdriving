@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -25,6 +27,11 @@ class UserController extends Controller
     public function learners()
     {
         return $this->renderUsers('Learners', 'Learner');
+    }
+
+    public function unverified()
+    {
+        return $this->renderUsers('Unverified Users', unverifiedOnly: true);
     }
 
     public function create()
@@ -103,7 +110,35 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User deleted');
     }
 
-    private function renderUsers(string $title, ?string $role = null)
+    public function verify(User $user)
+    {
+        if ($user->hasVerifiedEmail()) {
+            return back()
+                ->with('success', 'User email is already verified.')
+                ->with('flash', [
+                    'bannerStyle' => 'success',
+                    'banner' => 'User email is already verified.',
+                ]);
+        }
+
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($user));
+
+            Log::notice('User email manually verified by administrator.', [
+                'actor_id' => auth()->id(),
+                'user_id' => $user->id,
+            ]);
+        }
+
+        return back()
+            ->with('success', 'User email verified.')
+            ->with('flash', [
+                'bannerStyle' => 'success',
+                'banner' => 'User email verified.',
+            ]);
+    }
+
+    private function renderUsers(string $title, ?string $role = null, bool $unverifiedOnly = false)
     {
         $query = User::query()
             ->with('roles:id,name')
@@ -114,10 +149,15 @@ class UserController extends Controller
             $query->role($role);
         }
 
+        if ($unverifiedOnly) {
+            $query->whereNull('email_verified_at');
+        }
+
         return Inertia::render('Admin/Users/Index', [
             'users' => $query->get(),
             'title' => $title,
             'role' => $role,
+            'verification' => $unverifiedOnly ? 'unverified' : 'all',
         ]);
     }
 

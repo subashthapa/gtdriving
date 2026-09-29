@@ -61,5 +61,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'role:Admin|SuperAdmin'])->prefix('dashboard/admin')->as('admin.')->group(function () {
     Route::get('instructors', [UserController::class, 'instructors'])->name('instructors.index');
     Route::get('learners', [UserController::class, 'learners'])->name('learners.index');
+    Route::get('users/unverified', [UserController::class, 'unverified'])->name('users.unverified');
+    Route::patch('users/{user}/verify', [UserController::class, 'verify'])->name('users.verify');
     Route::resource('users', UserController::class)->names('users');
 });
