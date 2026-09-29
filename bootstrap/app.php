@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Allow first-party API requests to authenticate with the web session.
+        $middleware->statefulApi();
+
         // TLS terminates at Traefik, so Laravel must honor its forwarded scheme.
         $middleware->trustProxies(at: '*');
 
