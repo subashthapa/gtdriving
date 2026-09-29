@@ -102,6 +102,10 @@ QUEUE_CONNECTION=sync
 
 GT Driving is configured to use Resend SMTP for password resets, email verification, and instructor invitations. Set `MAIL_MAILER=resend_smtp`, a valid `RESEND_API_KEY`, and a sender address on a verified Resend domain before deploying. Test delivery after every mail configuration change.
 
+The production entrypoint rejects missing or placeholder sender domains when a
+real mail transport is enabled. Validate the SMTP envelope sender before
+recreating the service; a valid API key alone does not verify the sender domain.
+
 ## First Deployment
 
 ```bash

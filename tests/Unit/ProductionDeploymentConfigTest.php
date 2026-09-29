@@ -33,4 +33,23 @@ class ProductionDeploymentConfigTest extends TestCase
             $entrypoint
         );
     }
+
+    public function test_production_rejects_placeholder_mail_senders(): void
+    {
+        $entrypoint = file_get_contents(
+            dirname(__DIR__, 2).'/deploy/docker/entrypoint.sh'
+        );
+
+        $this->assertNotFalse($entrypoint);
+        $this->assertStringContainsString(
+            '[ "${APP_ENV:-}" = "production" ]',
+            $entrypoint
+        );
+        $this->assertStringContainsString('*@example.com', $entrypoint);
+        $this->assertStringContainsString('*@REPLACE_WITH_DOMAIN', $entrypoint);
+        $this->assertStringContainsString(
+            'Refusing to start production with a placeholder mail sender.',
+            $entrypoint
+        );
+    }
 }
