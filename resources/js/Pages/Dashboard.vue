@@ -135,6 +135,7 @@ const formatCurrency = (amount) => {
       <div class="flex justify-between items-center">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
         <div v-if="isAdmin" class="flex flex-wrap justify-end gap-2">
+          <Link :href="route('admin.bookings.create')" class="rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800">Create Booking</Link>
           <Link :href="route('admin.bookings.index')" class="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700">Booked Sessions</Link>
           <Link :href="route('admin.instructors.index')" class="rounded bg-white px-3 py-2 text-sm text-blue-700 ring-1 ring-blue-200">Instructors</Link>
           <Link :href="route('admin.learners.index')" class="rounded bg-white px-3 py-2 text-sm text-blue-700 ring-1 ring-blue-200">Learners</Link>
@@ -154,6 +155,10 @@ const formatCurrency = (amount) => {
         </div>
         <div class="bg-white shadow-xl sm:rounded-lg p-6">
           <div v-if="isStudent">
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-blue-700 p-5 text-white">
+              <div><h3 class="text-xl font-bold">Ready for your next lesson?</h3><p class="mt-1 text-sm text-blue-100">Your contact details will be filled in automatically.</p></div>
+              <Link :href="route('booking.create')" class="rounded-lg bg-white px-5 py-3 font-bold text-blue-700 hover:bg-blue-50">Book New Lesson</Link>
+            </div>
             <h3 class="text-lg font-bold mb-4">Upcoming Bookings</h3>
             <p v-if="cancelError" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ cancelError }}</p>
             <div v-if="futureBookings.length">
@@ -204,7 +209,8 @@ const formatCurrency = (amount) => {
                         <td class="px-4 py-2">{{ booking.instructions ?? '—' }}</td>
                         <td class="px-4 py-2 capitalize">{{ formatCurrency(booking.amount) }} · {{ booking.payment_status }}</td>
                         <td class="px-4 py-2 space-x-2">
-                          <button @click="startEdit(booking)" class="text-sm text-blue-600 hover:underline">Edit</button>
+                          <button @click="startEdit(booking)" class="text-sm text-blue-600 hover:underline">Reschedule</button>
+                          <Link :href="route('booking.create', { instructor: booking.instructor })" class="text-sm text-blue-600 hover:underline">Book Again</Link>
                           <button @click="deleteBooking(booking.id)" class="text-sm text-red-600 hover:underline">Cancel booking</button>
                         </td>
                       </template>
@@ -227,6 +233,7 @@ const formatCurrency = (amount) => {
                       <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Instructor</th>
                       <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Instructions</th>
                       <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
@@ -237,6 +244,7 @@ const formatCurrency = (amount) => {
                       <td class="px-4 py-2">{{ booking.instructor_user?.name || '—' }}</td>
                       <td class="px-4 py-2">{{ booking.instructions ?? '—' }}</td>
                       <td class="px-4 py-2 capitalize">{{ formatCurrency(booking.amount) }} · {{ booking.payment_status }}</td>
+                      <td class="px-4 py-2"><Link :href="route('booking.create', { instructor: booking.instructor })" class="text-sm font-medium text-blue-600 hover:underline">Book Again</Link></td>
                     </tr>
                   </tbody>
                 </table>
@@ -246,7 +254,7 @@ const formatCurrency = (amount) => {
           </div>
 
           <div v-else-if="isInstructor">
-            <h3 class="text-lg font-bold mb-4">Instructor Overview</h3>
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3"><h3 class="text-lg font-bold">Instructor Overview</h3><Link :href="route('instructor.availability.edit')" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Manage Availability</Link></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div class="bg-emerald-100 text-emerald-800 p-4 rounded shadow">Total Earnings: <strong>{{ formatCurrency(instructorStats.total_earnings) }}</strong></div>
               <div class="bg-orange-100 text-orange-800 p-4 rounded shadow">Outstanding: <strong>{{ formatCurrency(instructorStats.outstanding_payments) }}</strong></div>
@@ -344,7 +352,7 @@ const formatCurrency = (amount) => {
           </div>
 
           <div v-else-if="isAdmin && stats">
-            <h3 class="text-lg font-bold mb-4">Admin Stats</h3>
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h3 class="text-lg font-bold">Admin Stats</h3><Link :href="route('admin.bookings.create')" class="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">Create Booking</Link></div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div class="bg-blue-100 text-blue-800 p-4 rounded shadow">Users: <strong>{{ stats.total_users }}</strong></div>
               <div class="bg-green-100 text-green-800 p-4 rounded shadow">Bookings: <strong>{{ stats.total_bookings }}</strong></div>

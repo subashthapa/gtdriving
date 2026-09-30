@@ -55,6 +55,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_photo_url',
         'is_admin',
         'is_super_admin',
+        'is_learner',
+        'is_instructor',
     ];
 
     /**
@@ -89,5 +91,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getIsSuperAdminAttribute(): bool
     {
         return $this->hasRole('SuperAdmin');
+    }
+
+    public function getIsLearnerAttribute(): bool
+    {
+        return $this->hasRole('Learner');
+    }
+
+    public function getIsInstructorAttribute(): bool
+    {
+        return $this->hasRole('Instructor');
     }
 }

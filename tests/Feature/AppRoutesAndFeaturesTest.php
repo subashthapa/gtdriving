@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
+use App\Models\InstructorAvailability;
 use Tests\TestCase;
 
 class AppRoutesAndFeaturesTest extends TestCase
@@ -18,6 +19,60 @@ class AppRoutesAndFeaturesTest extends TestCase
     {
         $this->get('/')
             ->assertOk();
+    }
+
+    public function test_dedicated_booking_page_is_accessible(): void
+    {
+        $this->get(route('booking.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Booking/Create')
+                ->where('adminMode', false)
+            );
+    }
+
+    public function test_any_available_instructor_returns_a_real_assignment(): void
+    {
+        Role::findOrCreate('Instructor', 'web');
+        $instructor = User::factory()->create();
+        $instructor->assignRole('Instructor');
+
+        DB::table('timeslots')->insert([
+            'start_time' => '09:00:00', 'end_time' => '10:00:00', 'is_visible' => true,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->getJson('/api/available-slots?date='.now()->addWeek()->toDateString())
+            ->assertOk()
+            ->assertJsonFragment([
+                'available_instructor_id' => $instructor->id,
+                'available_instructor_name' => $instructor->name,
+            ]);
+    }
+
+    public function test_instructor_availability_limits_public_slots(): void
+    {
+        Role::findOrCreate('Instructor', 'web');
+        $instructor = User::factory()->create();
+        $instructor->assignRole('Instructor');
+        $date = now()->next('Monday');
+
+        InstructorAvailability::create([
+            'instructor_id' => $instructor->id,
+            'weekday' => $date->dayOfWeek,
+            'start_time' => '10:00',
+            'end_time' => '12:00',
+            'is_active' => true,
+        ]);
+        DB::table('timeslots')->insert([
+            ['start_time' => '09:00:00', 'end_time' => '10:00:00', 'is_visible' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['start_time' => '10:00:00', 'end_time' => '11:00:00', 'is_visible' => true, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->getJson("/api/available-slots?date={$date->toDateString()}&instructor={$instructor->id}")
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['start_time' => '10:00:00']);
     }
 
     public function test_contact_message_submission_persists_message(): void
@@ -704,6 +759,56 @@ class AppRoutesAndFeaturesTest extends TestCase
             'payment_reference' => 'CASH-001',
         ]);
         $this->assertEquals('90.00', $instructor->fresh()->income);
+    }
+
+    public function test_admin_can_create_booking_for_a_learner(): void
+    {
+        Role::findOrCreate('Instructor', 'web');
+        Role::findOrCreate('Learner', 'web');
+        $admin = $this->createAdminUser();
+        $learner = User::factory()->create();
+        $learner->assignRole('Learner');
+        $instructor = User::factory()->create();
+        $instructor->assignRole('Instructor');
+        $date = now()->addDays(4)->toDateString();
+
+        $this->actingAs($admin)->postJson('/book', [
+            'learner_id' => $learner->id,
+            'name' => $learner->name,
+            'email' => $learner->email,
+            'phone' => $learner->phone ?: '0400000000',
+            'date' => $date,
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+            'instructor' => $instructor->id,
+            'payment_method' => 'cash',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('bookings', [
+            'user_id' => $learner->id,
+            'instructor' => $instructor->id,
+            'approved_by' => $admin->id,
+            'start_date' => $date,
+        ]);
+    }
+
+    public function test_instructor_can_manage_weekly_availability(): void
+    {
+        Role::findOrCreate('Instructor', 'web');
+        $instructor = User::factory()->create();
+        $instructor->assignRole('Instructor');
+        $days = collect(range(0, 6))->map(fn ($weekday) => [
+            'weekday' => $weekday,
+            'is_active' => $weekday > 0 && $weekday < 6,
+            'start_time' => '08:00',
+            'end_time' => '17:00',
+        ])->all();
+
+        $this->actingAs($instructor)
+            ->put(route('instructor.availability.update'), ['days' => $days])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('instructor_availabilities', 7);
     }
 
     private function createAdminUser(): User

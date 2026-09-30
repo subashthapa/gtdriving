@@ -1,60 +1,17 @@
-<template>
-  <div>
-    <FullCalendar
-      :options="calendarOptions"
-      :selectable="true"
-    />
-  </div>
-</template>
+<script setup>
+import FullCalendar from '@fullcalendar/vue3'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin from '@fullcalendar/interaction'
 
-<script>
-import FullCalendar from '@fullcalendar/vue3';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import axios from 'axios';
-
-export default {
-  components: { FullCalendar },
-  data() {
-    return {
-      defaultEvents: [
-          { title: 'Event 1', date: '2025-03-15' },
-          { title: 'Event 2', date: '2025-03-20' },
-        ],
-        fetchedEvents: []
-    };
-  },
-  mounted() {
-    console.log('BookingCalendar component mounted');
-    this.getBookedDates();
-  },
-  methods: {
-    onDateClick(info) {
-      // console.log("Clicked date", info);
-      this.$emit('date-selected', info.dateStr);
-    },
-    getBookedDates() {
-      console.log('Fetching booked dates from API');
-      axios.get('/api/booked-dates').then(response => {
-        this.fetchedEvents = response.data.map(booking => ({
-          title: booking.instructions || 'Booked',
-          date: booking.start_date,
-        }));
-      }).catch(error => {
-        console.error('Error fetching booked dates: ', error);
-      });
-    }
-  },
-  computed: {
-    calendarOptions() {
-      return {
-        plugins: [dayGridPlugin, interactionPlugin],
-        initialView: 'dayGridMonth',
-        selectable: true,
-        dateClick: this.onDateClick,  // Now correctly references the method
-        events: [...this.defaultEvents, ...this.fetchedEvents],
-      };
-    }
-  },
-};
+const emit = defineEmits(['date-selected'])
+const calendarOptions = {
+  plugins: [dayGridPlugin, interactionPlugin], initialView: 'dayGridMonth', selectable: true,
+  fixedWeekCount: false, validRange: { start: new Date().toISOString().slice(0, 10) },
+  dateClick: info => emit('date-selected', info.dateStr), height: 'auto', buttonText: { today: 'Today' },
+}
 </script>
+<template><div class="booking-calendar"><FullCalendar :options="calendarOptions" /></div></template>
+<style scoped>
+.booking-calendar :deep(.fc-toolbar-title){font-size:1.15rem}.booking-calendar :deep(.fc-button-primary){background:#1d4ed8;border-color:#1d4ed8}.booking-calendar :deep(.fc-daygrid-day:not(.fc-day-disabled)){cursor:pointer}
+@media(max-width:640px){.booking-calendar :deep(.fc-header-toolbar){align-items:flex-start;gap:.75rem}.booking-calendar :deep(.fc-daygrid-day-number){padding:.5rem .35rem}}
+</style>

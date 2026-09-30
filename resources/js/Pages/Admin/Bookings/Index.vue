@@ -17,7 +17,7 @@ const currency = (amount) => new Intl.NumberFormat('en-AU', {
 
 <template>
   <AppLayout title="Booked Sessions">
-    <template #header><h2 class="text-xl font-semibold text-gray-800">Booked Sessions</h2></template>
+    <template #header><div class="flex items-center justify-between gap-4"><h2 class="text-xl font-semibold text-gray-800">Booked Sessions</h2><Link :href="route('admin.bookings.create')" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">Create Booking</Link></div></template>
     <div class="py-10">
       <div class="mx-auto max-w-7xl space-y-5 px-4 sm:px-6 lg:px-8">
         <div class="flex flex-wrap gap-2">

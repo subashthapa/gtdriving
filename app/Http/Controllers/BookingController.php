@@ -15,18 +15,24 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
+use App\Models\InstructorAvailability;
 
 class BookingController extends Controller
 {
     /**
      * 
      */
-    public function create()
+    public function create(Request $request)
     {
+        $preferredInstructor = $request->integer('instructor') ?: null;
+
         return Inertia::render('Booking/Create', [
             'timeslots' => Timeslot::all(),
             'hourlyRate' => (float) config('services.instructor.hourly_rate', 60),
             'currency' => config('services.payments.currency', 'AUD'),
+            'preferredInstructor' => $preferredInstructor,
+            'adminMode' => false,
+            'learners' => [],
         ]);
     }
 
@@ -37,27 +43,52 @@ class BookingController extends Controller
     {
         $date = $request->query('date');
         $instructorId = $request->query('instructor');
+        $duration = max(30, min(180, (int) $request->query('duration', 60)));
 
         if(!$date) {
             return response()->json(['error' => 'Date is required'], 400);
         }
 
         $allSlots = Timeslot::query()
+            ->where('is_visible', true)
             ->get(['id', 'start_time', 'end_time']);
 
         if (! $instructorId) {
-            return response()->json($allSlots);
+            if (! Role::where('name', 'Instructor')->where('guard_name', 'web')->exists()) {
+                return response()->json($allSlots);
+            }
+
+            $instructors = User::role('Instructor')->select('id', 'name')->orderBy('name')->get();
+            $weekday = Carbon::parse($date)->dayOfWeek;
+
+            return response()->json($allSlots->map(function ($slot) use ($instructors, $date, $weekday, $duration) {
+                $requestedEnd = Carbon::parse($slot->start_time)->addMinutes($duration)->format('H:i:s');
+                $availableInstructor = $instructors->first(function ($instructor) use ($slot, $date, $weekday, $requestedEnd) {
+                    return $this->instructorWorksAt($instructor->id, $weekday, $slot->start_time, $requestedEnd)
+                        && ! $this->instructorHasConflict($instructor->id, $date, $slot->start_time, $requestedEnd);
+                });
+
+                if (! $availableInstructor) {
+                    return null;
+                }
+
+                return [
+                    'id' => $slot->id,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'available_instructor_id' => $availableInstructor->id,
+                    'available_instructor_name' => $availableInstructor->name,
+                ];
+            })->filter()->values());
         }
 
-        $bookedTimes = Booking::query()
-            ->whereDate('start_date', $date)
-            ->where('instructor', $instructorId)
-            ->pluck('start_time')
-            ->map(fn ($time) => Carbon::parse($time)->format('H:i:s'));
+        $weekday = Carbon::parse($date)->dayOfWeek;
+        $available = $allSlots->filter(function ($slot) use ($instructorId, $weekday, $date, $duration) {
+            $requestedEnd = Carbon::parse($slot->start_time)->addMinutes($duration)->format('H:i:s');
 
-        $available = $allSlots->reject(
-            fn ($slot) => $bookedTimes->contains(Carbon::parse($slot->start_time)->format('H:i:s'))
-        )->values();
+            return $this->instructorWorksAt((int) $instructorId, $weekday, $slot->start_time, $requestedEnd)
+                && ! $this->instructorHasConflict((int) $instructorId, $date, $slot->start_time, $requestedEnd);
+        })->values();
 
         return response()->json($available);
     }
@@ -105,11 +136,23 @@ class BookingController extends Controller
                 }),
             ],
             'approved_by' => 'nullable|integer',
+            'learner_id' => 'nullable|integer|exists:users,id',
             'instructions' => 'nullable|string',
             'payment_method' => ['sometimes', Rule::in(['cash'])],
         ]);
 
-        if (Auth::check()) {
+        $actingUser = Auth::user();
+        $isAdminBooking = $actingUser && $actingUser->hasAnyRole(['Admin', 'SuperAdmin']);
+
+        if ($isAdminBooking && empty($validated['learner_id'])) {
+            throw ValidationException::withMessages([
+                'learner_id' => 'Select the learner this booking is for.',
+            ]);
+        }
+
+        if ($isAdminBooking && ! empty($validated['learner_id'])) {
+            $user = User::findOrFail($validated['learner_id']);
+        } elseif (Auth::check()) {
             $user = Auth::user();
         } else {
             $user = User::where('email', $validated['email'])->first();
@@ -140,10 +183,21 @@ class BookingController extends Controller
             ]);
         }
 
+        if (! $this->instructorWorksAt(
+            (int) $instructorId,
+            $requestedStart->dayOfWeek,
+            $requestedStart->format('H:i:s'),
+            $requestedEnd->format('H:i:s')
+        )) {
+            throw ValidationException::withMessages([
+                'start_time' => 'This lesson falls outside the instructor’s available hours.',
+            ]);
+        }
+
         $durationMinutes = $requestedStart->diffInMinutes($requestedEnd);
         $amount = round(($durationMinutes / 60) * (float) config('services.instructor.hourly_rate', 60), 2);
 
-        DB::transaction(function () use ($validated, $user, $instructorId, $requestedStart, $requestedEnd, $amount) {
+        DB::transaction(function () use ($validated, $user, $instructorId, $requestedStart, $requestedEnd, $amount, $isAdminBooking, $actingUser) {
             // Serialize booking creation per instructor to prevent concurrent double bookings.
             User::whereKey($instructorId)->lockForUpdate()->firstOrFail();
 
@@ -166,7 +220,7 @@ class BookingController extends Controller
                 'start_date' => $validated['date'],
                 'end_date' => $validated['date'],
                 'instructor' => $instructorId,
-                'approved_by' => $validated['approved_by'] ?? null,
+                'approved_by' => $isAdminBooking ? $actingUser->id : ($validated['approved_by'] ?? null),
                 'instructions' => $validated['instructions'] ?? null,
                 'amount' => $amount,
                 'payment_method' => $validated['payment_method'] ?? 'cash',
@@ -214,9 +268,40 @@ class BookingController extends Controller
 
     public function fetchInstructors()
     {
+        if (! Role::where('name', 'Instructor')->where('guard_name', 'web')->exists()) {
+            return response()->json([]);
+        }
+
         return response()->json(
             User::role('Instructor')->select('id', 'name')->orderBy('name')->get()
         );
+    }
+
+    private function instructorWorksAt(int $instructorId, int $weekday, string $startTime, string $endTime): bool
+    {
+        $hasAvailability = InstructorAvailability::where('instructor_id', $instructorId)->exists();
+
+        if (! $hasAvailability) {
+            return true;
+        }
+
+        return InstructorAvailability::query()
+            ->where('instructor_id', $instructorId)
+            ->where('weekday', $weekday)
+            ->where('is_active', true)
+            ->whereTime('start_time', '<=', $startTime)
+            ->whereTime('end_time', '>=', $endTime)
+            ->exists();
+    }
+
+    private function instructorHasConflict(int $instructorId, string $date, string $startTime, string $endTime): bool
+    {
+        return Booking::query()
+            ->whereDate('start_date', $date)
+            ->where('instructor', $instructorId)
+            ->whereTime('start_time', '<', $endTime)
+            ->whereTime('end_time', '>', $startTime)
+            ->exists();
     }
 
     /**

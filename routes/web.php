@@ -13,8 +13,10 @@ use \App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\InstructorInvitationController;
 use App\Http\Controllers\Auth\AcceptInstructorInvitationController;
+use App\Http\Controllers\InstructorAvailabilityController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/book', [BookingController::class, 'create'])->name('booking.create');
 Route::post('/messages', [MessageController::class, 'store'])->middleware('throttle:5,1')->name('messages.store');
 Route::post('book',[BookingController::class,'store'])->middleware('throttle:10,1')->name('saveBooking');
 
@@ -36,10 +38,18 @@ Route::middleware([
     Route::put('/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update');
     Route::patch('/bookings/{booking}/payment', [BookingController::class, 'updatePayment'])->name('bookings.payment.update');
     Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
+
+    Route::get('/instructor/availability', [InstructorAvailabilityController::class, 'edit'])
+        ->middleware('role:Instructor')
+        ->name('instructor.availability.edit');
+    Route::put('/instructor/availability', [InstructorAvailabilityController::class, 'update'])
+        ->middleware('role:Instructor')
+        ->name('instructor.availability.update');
 });
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'role:Admin|SuperAdmin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+    Route::get('bookings/create', [AdminBookingController::class, 'create'])->name('bookings.create');
     Route::get('bookings/{booking}/edit', [AdminBookingController::class, 'edit'])->name('bookings.edit');
     Route::put('bookings/{booking}', [AdminBookingController::class, 'update'])->name('bookings.update');
     Route::resource('packages', PackageController::class);

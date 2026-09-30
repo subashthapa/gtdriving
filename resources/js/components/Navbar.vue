@@ -40,15 +40,17 @@ onBeforeUnmount(() => {
           <span>GT Driving Solution</span>
         </Link>
 
+        <Link :href="route('booking.create')" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 md:hidden">Book a Lesson</Link>
+
         <!-- Navigation Links -->
         <div class="hidden md:flex space-x-8 items-center">
-          <a href="#about" class="text-gray-700 px-4 py-2 hover:text-blue-500">About Us</a>
-          <a href="#features" class="text-gray-700 px-4 py-2 hover:text-blue-500">Features</a>
-          <a href="#testimonials" class="text-gray-700 px-4 py-2 hover:text-blue-500">Testimonials</a>
+          <a href="/#about" class="text-gray-700 px-4 py-2 hover:text-blue-500">About Us</a>
+          <a href="/#features" class="text-gray-700 px-4 py-2 hover:text-blue-500">Features</a>
+          <a href="/#testimonials" class="text-gray-700 px-4 py-2 hover:text-blue-500">Testimonials</a>
+          <Link :href="route('booking.create')" class="text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">Book a Lesson</Link>
 
           <!-- If user not logged in -->
           <template v-if="!$page.props.auth.user">
-            <a href="#book" class="text-white bg-blue-500 px-4 py-2 rounded hover:bg-blue-600">Book Now</a>
             <Link :href="route('login')" class="text-gray-700 hover:text-blue-600 px-4">Login</Link>
             <Link :href="route('register')" class="text-gray-700 hover:text-blue-600 px-4">Register</Link>
 
@@ -76,6 +78,7 @@ onBeforeUnmount(() => {
 
               <div v-show="dropdownOpen" class="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
                 <Link :href="route('dashboard')" class="block px-4 py-2 hover:bg-gray-100">Dashboard</Link>
+                <Link :href="route('booking.create')" class="block px-4 py-2 hover:bg-gray-100">Book a Lesson</Link>
                 <Link :href="route('bookings.index')" class="block px-4 py-2 hover:bg-gray-100">My Bookings</Link>
                 <form @submit.prevent="logout">
                   <button class="block w-full text-left px-4 py-2 hover:bg-gray-100">Log Out</button>

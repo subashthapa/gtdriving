@@ -52,7 +52,16 @@ const logout = () => {
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                <NavLink v-if="$page.props.auth.user?.is_learner" :href="route('booking.create')" :active="route().current('booking.create')">
+                                    Book a Lesson
+                                </NavLink>
+                                <NavLink v-if="$page.props.auth.user?.is_instructor" :href="route('instructor.availability.edit')" :active="route().current('instructor.availability.*')">
+                                    Manage Availability
+                                </NavLink>
                                 <template v-if="$page.props.auth.user?.is_admin">
+                                    <NavLink :href="route('admin.bookings.create')" :active="route().current('admin.bookings.create')">
+                                        Create Booking
+                                    </NavLink>
                                     <NavLink :href="route('admin.bookings.index')" :active="route().current('admin.bookings.*')">
                                         Sessions
                                     </NavLink>
@@ -209,7 +218,10 @@ const logout = () => {
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             Dashboard
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink v-if="$page.props.auth.user?.is_learner" :href="route('booking.create')" :active="route().current('booking.create')">Book a Lesson</ResponsiveNavLink>
+                        <ResponsiveNavLink v-if="$page.props.auth.user?.is_instructor" :href="route('instructor.availability.edit')" :active="route().current('instructor.availability.*')">Manage Availability</ResponsiveNavLink>
                         <template v-if="$page.props.auth.user?.is_admin">
+                            <ResponsiveNavLink :href="route('admin.bookings.create')" :active="route().current('admin.bookings.create')">Create Booking</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.bookings.index')" :active="route().current('admin.bookings.*')">Booked Sessions</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.instructors.index')" :active="route().current('admin.instructors.*')">Instructors</ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('admin.learners.index')" :active="route().current('admin.learners.*')">Learners</ResponsiveNavLink>

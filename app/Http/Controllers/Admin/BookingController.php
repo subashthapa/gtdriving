@@ -36,6 +36,18 @@ class BookingController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        return Inertia::render('Booking/Create', [
+            'timeslots' => [],
+            'hourlyRate' => (float) config('services.instructor.hourly_rate', 60),
+            'currency' => config('services.payments.currency', 'AUD'),
+            'preferredInstructor' => null,
+            'adminMode' => true,
+            'learners' => User::role('Learner')->select('id', 'name', 'email', 'phone')->orderBy('name')->get(),
+        ]);
+    }
+
     public function edit(Booking $booking)
     {
         return Inertia::render('Admin/Bookings/Edit', [
