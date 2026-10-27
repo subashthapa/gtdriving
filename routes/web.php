@@ -16,6 +16,12 @@ use App\Http\Controllers\Auth\AcceptInstructorInvitationController;
 use App\Http\Controllers\InstructorAvailabilityController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::prefix('chat')->name('chat.')->middleware('throttle:40,1')->group(function () {
+    Route::get('/', [\App\Http\Controllers\ChatController::class, 'show'])->block()->name('show');
+    Route::post('/messages', [\App\Http\Controllers\ChatController::class, 'send'])->block()->name('send');
+    Route::delete('/', [\App\Http\Controllers\ChatController::class, 'reset'])->block()->name('reset');
+});
 Route::get('/book', [BookingController::class, 'create'])->name('booking.create');
 Route::post('/messages', [MessageController::class, 'store'])->middleware('throttle:5,1')->name('messages.store');
 Route::post('book',[BookingController::class,'store'])->middleware('throttle:10,1')->name('saveBooking');
